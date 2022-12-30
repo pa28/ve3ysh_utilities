@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace xdg {
 
@@ -139,18 +140,18 @@ namespace xdg {
             return instance;
         }
 
-        [[nodiscard]] const std::string& appName() const { return mAppName; }
+        [[maybe_unused]] [[nodiscard]] const std::string& appName() const { return mAppName; }
 
-        [[nodiscard]] const std::filesystem::path& configHome() const { return mConfigHome; }
+        [[maybe_unused]] [[nodiscard]] const std::filesystem::path& configHome() const { return mConfigHome; }
 
-        [[nodiscard]] const std::filesystem::path& cacheHome() const { return mCacheHome; }
+        [[maybe_unused]] [[nodiscard]] const std::filesystem::path& cacheHome() const { return mCacheHome; }
 
-        [[nodiscard]] const std::filesystem::path& dataHome() const { return mDataHome; }
+        [[maybe_unused]] [[nodiscard]] const std::filesystem::path& dataHome() const { return mDataHome; }
 
-        [[nodiscard]] const std::filesystem::path& appResources() const { return mAppResources; }
+        [[maybe_unused]] [[nodiscard]] const std::filesystem::path& appResources() const { return mAppResources; }
 
         template<typename Source>
-        std::filesystem::path appResourcesAppend(Source source) {
+        [[maybe_unused]] std::filesystem::path appResourcesAppend(Source source) {
             auto path = mAppResources;
             return path.append(source);
         }
