@@ -166,5 +166,31 @@ namespace xdg {
          * @return
          */
         std::filesystem::path getenv_path(XDGFilePaths::XDG_Name name, const std::string &appName, bool create);
+
+        template<typename ConfigFile>
+        [[maybe_unused]] [[nodiscard]] XDGFilePaths::XDG_Path_Set get_configuration_paths(ConfigFile configFile) {
+            std::vector<std::filesystem::path> paths{};
+            if (!mConfigHome.empty()) {
+                paths.push_back(mConfigHome);
+                paths.back().append(configFile);
+            }
+            paths.push_back(mAppResources);
+            paths.back().append(configFile);
+            return paths;
+        }
+
+        template<typename ConfigFile, typename Source>
+        [[maybe_unused]] [[nodiscard]] XDGFilePaths::XDG_Path_Set get_configuration_paths(ConfigFile configFile, Source cmdLineOpt) {
+            auto paths = get_configuration_paths(configFile);
+            paths.insert(paths.begin(), std::filesystem::path(cmdLineOpt));
+            return paths;
+        }
+
+        static std::optional<std::filesystem::path> firstExistingFile(XDGFilePaths::XDG_Path_Set pathSet) {
+            for (auto file : pathSet)
+                if (std::filesystem::exists(file) && std::filesystem::is_regular_file(file))
+                    return file;
+            return std::nullopt;
+        }
     };
 }
