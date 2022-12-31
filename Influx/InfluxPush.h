@@ -90,6 +90,8 @@ public:
      */
     bool pushData();
 
+    [[maybe_unused]] void showData();
+
     [[maybe_unused]] auto getMeasurements() const {
         return measurements.str();
     }

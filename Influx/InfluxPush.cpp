@@ -8,6 +8,7 @@
 
 #include <ctime>
 #include <cstring>
+#include <iostream>
 #include "InfluxPush.h"
 
 bool InfluxPush::pushData() {
@@ -50,4 +51,9 @@ void InfluxPush::setMeasurementEpoch(const std::string& date, const std::string&
     timeString.append("T").append(time).append(zone);
     strptime(timeString.c_str(), TimeFmt.c_str(), &tm);
     timeStamp = static_cast<unsigned long long>(mktime(&tm)) * 1000000000;
+}
+
+void InfluxPush::showData() {
+    auto postData = measurements.str();
+    std::cout << '\n' << postData << "\n" << std::endl;
 }
