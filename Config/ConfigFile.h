@@ -63,7 +63,7 @@ public:
     void close();
 
     template<typename T>
-    std::optional<T> safeConvert(const std::string_view &stringView) {
+    static std::optional<T> safeConvert(const std::string_view &stringView) {
         static_assert(std::is_integral_v<T> || std::is_floating_point_v<T>, "Type not supported.");
 
         if (stringView.empty())
