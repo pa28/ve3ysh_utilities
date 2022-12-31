@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <Permissions.h>
 
 namespace xdg {
 
@@ -186,10 +187,15 @@ namespace xdg {
             return paths;
         }
 
-        static std::optional<std::filesystem::path> firstExistingFile(XDGFilePaths::XDG_Path_Set pathSet) {
-            for (auto file : pathSet)
-                if (std::filesystem::exists(file) && std::filesystem::is_regular_file(file))
-                    return file;
+        static std::optional<std::filesystem::path> firstExistingFile(const XDGFilePaths::XDG_Path_Set& pathSet,
+                                                                      unsigned int permMask = ysh::Permissions::READ) {
+            for (const auto& file : pathSet)
+                if (std::filesystem::exists(file) && std::filesystem::is_regular_file(file)) {
+                    ysh::Permissions permissions(file);
+                    if (permissions && permissions.mask(permMask)) {
+                        return file;
+                    }
+                }
             return std::nullopt;
         }
     };
