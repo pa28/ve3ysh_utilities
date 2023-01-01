@@ -68,8 +68,8 @@ public:
      * @param name The measurement value name.
      * @param value The measurement value.
      */
-    void addMeasurement(const std::string& prefix, const std::optional<std::string>& name, const std::optional<std::string>& value) {
-        addMeasurement(prefix, name, value, timeStamp);
+    bool addMeasurement(const std::string& prefix, const std::optional<std::string>& name, const std::optional<std::string>& value) {
+        return addMeasurement(prefix, name, value, timeStamp);
     }
 
     /**
@@ -78,10 +78,13 @@ public:
      * @param name The measurement value name.
      * @param value The measurement value.
      */
-    void addMeasurement(const std::string& prefix, const std::optional<std::string>& name,
+    bool addMeasurement(const std::string& prefix, const std::optional<std::string>& name,
                         const std::optional<std::string>& value, unsigned long long useTimeStamp) {
-        if (name.has_value() && !name.value().empty() && value.has_value() && !value.value().empty())
+        if (name.has_value() && !name.value().empty() && value.has_value() && !value.value().empty()) {
             measurements << prefix << name.value() << '=' << value.value() << ' ' << useTimeStamp << '\n';
+            return true;
+        }
+        return false;
     }
 
     /**
