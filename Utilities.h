@@ -10,7 +10,7 @@
 * @return The composited string
 */
 template<typename Arg, typename... Args>
-std::string StringCompositor(Arg &&arg, Args &&... args) {
+inline std::string StringCompositor(Arg &&arg, Args &&... args) {
     std::stringstream out;
     out << std::forward<Arg>(arg);
     ((out << std::forward<Args>(args)), ...);
