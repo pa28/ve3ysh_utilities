@@ -23,6 +23,7 @@ public:
      * @param argv The array of command line arguments.
      */
     InputParser(int &argc, char **argv) {
+        programPathName = argv[0];
         for (int i = 1; i < argc; ++i)
             this->tokens.emplace_back(argv[i]);
     }
@@ -43,6 +44,8 @@ public:
         return std::find(this->tokens.begin(), this->tokens.end(), option)
                != this->tokens.end();
     }
+
+    std::string programPathName{};
 
 private:
     std::vector<std::string> tokens;
