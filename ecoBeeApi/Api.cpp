@@ -29,7 +29,8 @@ namespace ecoBee {
                                R"(2023-01-31","startInterval":"10)",
                                R"(","endDate":")",
                                R"(2023-01-31","endInterval":"20)",
-                               R"(","columns":"auxHeat1,compCool1,fan,outdoorTemp,zoneAveTemp","includeSensors":true,"selection":{"selectionType":"thermostats","selectionMatch":")",
+                               R"(","columns":"auxHeat1,compCool1,fan,zoneHeatTemp,zoneCoolTemp,outdoorTemp,outdoorHumidity,wind,hvacMode,zoneHvacMode,zoneClimate,zoneAveTemp","includeSensors":true,)"
+                               R"("selection":{"selectionType":"thermostats","selectionMatch":")",
                                Thermostat,
                                R"("}})");
 //        auto url = R"(https://api.ecobee.com/1/runtimeReport?format=json&body=\{"startDate":"2015-01-01","endDate":"2015-01-03","columns":"auxHeat1,compCool1,fan,outdoorTemp,zoneAveTemp","selection":\{"selectionType":"thermostats","selectionMatch":"318324702718"\}\}')"
