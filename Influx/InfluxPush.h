@@ -72,6 +72,10 @@ public:
         return addMeasurement(prefix, name, value, timeStamp);
     }
 
+    bool addMeasurement(const std::string& prefix, const std::string& name, const std::string& value) {
+        return addMeasurement(prefix, name, value, timeStamp);
+    }
+
     /**
      * @brief Add a measurement to the measurement store using a specified time stamp in nanoseconds from epoch.
      * @param prefix The measurement prefix.
