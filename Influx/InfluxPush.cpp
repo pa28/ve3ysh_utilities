@@ -44,12 +44,17 @@ bool InfluxPush::pushData() {
     return true;
 }
 
-void InfluxPush::setMeasurementEpoch(const std::string& date, const std::string& time, const std::string& zone) {
+void InfluxPush::setMeasurementEpoch(const std::string &date, const std::string &time) {
     struct tm tm{};
     memset(&tm, 0, sizeof(tm));
+    time_t now;
+    ::time(&now);
+    [[maybe_unused]] auto tmNow = ::localtime(&now);
     std::string timeString{date};
-    timeString.append("T").append(time).append(zone);
+    timeString.append("T").append(time);
     strptime(timeString.c_str(), TimeFmt.c_str(), &tm);
+    tm.tm_gmtoff = tmNow->tm_gmtoff;
+    tm.tm_zone = tm.tm_zone;
     timeStamp = static_cast<unsigned long long>(mktime(&tm)) * 1000000000;
 }
 

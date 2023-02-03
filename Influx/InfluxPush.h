@@ -27,7 +27,9 @@
  */
 class InfluxPush {
 private:
-    const std::string TimeFmt{"%Y-%m-%dT%k:%M:%S%z"};   ///< Timestamp conversion format.
+    const std::string TimeFmtISO{"%Y-%m-%dT%k:%M:%S%z"};   ///< Timestamp conversion format, ISO Zone format.
+    const std::string TimeFmtName{"%Y-%m-%dT%k:%M:%S%Z"};  ///< Timestamp conversion format, Zone name format.
+    const std::string TimeFmt{"%Y-%m-%dT%k:%M:%S"};        ///< Timestamp conversion format no Zone format.
     unsigned long long timeStamp{};
     std::string influxHost{};
     bool connectTls{false};
@@ -43,12 +45,11 @@ public:
         : influxHost(std::move(host)), connectTls(tls), influxPort(port), influxDataBase(std::move(dataBase)) {}
 
     /**
-     * @brief Set measurement time stamp from a date, time and zone strings. See @refitem TimeFmt.
+     * @brief Set measurement time stamp from a date, time and zone strings. See @refitem TimeFmtISO.
      * @param date The data string YYYY-MM-DD.
      * @param time The time string HH:MM:SS.
-     * @param zone The zone string sHH:MM offset from GMT.
      */
-    void setMeasurementEpoch(const std::string& date, const std::string& time, const std::string& zone);
+    void setMeasurementEpoch(const std::string &date, const std::string &time);
 
     /**
      * @brief Get the current time stamp in nanoseconds from epoch.
