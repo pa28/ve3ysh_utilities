@@ -8,8 +8,8 @@
 
 #include <filesystem>
 
-#ifndef ECOBEEDATA_PERMISSIONS_H
-#define ECOBEEDATA_PERMISSIONS_H
+#ifndef YSH_PERMISSIONS_H
+#define YSH_PERMISSIONS_H
 
 namespace ysh {
 
@@ -86,4 +86,4 @@ namespace ysh {
 
 } // ysh
 
-#endif //ECOBEEDATA_PERMISSIONS_H
+#endif //YSH_PERMISSIONS_H
