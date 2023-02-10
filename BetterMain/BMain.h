@@ -219,6 +219,58 @@ namespace better_main {
         return std::ranges::count_if(invocation, [&arg](auto opt) { return opt.argIdx == arg; } );
     }
 
+    template<class Type>
+            concept ConvertTarget = requires {
+                std::is_integral_v<Type> || std::is_floating_point_v<Type>;
+        };
+
+    /**
+     * @struct NumericResult
+     * @brief Contains the result of numeric value conversion.
+     */
+    template<class Type>
+            requires ConvertTarget<Type>
+    struct NumericResult {
+        Type value{};
+        std::size_t pos{};
+    };
+
+    /**
+     * @brief Convert numeric arguments to the requested type.
+     * @tparam Type The type to convert to.
+     * @param value The value encoded in a string.
+     * @param base The base, defaults to 0 which will invoke automatic base selection. Ignored for floating point
+     * conversions.
+     * @return A NumericResult<Type>.
+     * @throws std::invalid_argument if no conversion could be performed.
+     * @throws std::out_of_range if the converted value would fall outside the range of the target type.
+     */
+    template<class Type, class String>
+    requires ConvertTarget<Type> &&
+        (std::is_same_v<String,std::string> || std::is_same_v<String,std::wstring>)
+    NumericResult<Type> numericValue(const String& value, int base = 0) {
+        std::size_t pos{0};
+        Type result{};
+        if constexpr (std::is_same_v<Type,int>) {
+            result = std::stoi(value, &pos, base);
+        } else if constexpr (std::is_same_v<Type,long>) {
+            result = std::stol(value, &pos, base);
+        } else if constexpr (std::is_same_v<Type,long long>) {
+            result = std::stoll(value, &pos, base);
+        } else if constexpr (std::is_same_v<Type,unsigned long>) {
+            result = std::stoul(value, &pos, base);
+        } else if constexpr (std::is_same_v<Type,unsigned long long>) {
+            result = std::stoull(value, &pos, base);
+        } else if constexpr (std::is_same_v<Type,float>) {
+            result = std::stof(value, &pos);
+        } else if constexpr (std::is_same_v<Type,double>) {
+            result = std::stod(value, &pos);
+        } else if constexpr (std::is_same_v<Type,long double>) {
+            result = std::stold(value, &pos);
+        }
+        return {result, pos};
+    }
+
 } // better_main
 
 int main(int argc, char const * const * argv);

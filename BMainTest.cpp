@@ -21,24 +21,22 @@ namespace better_main {
         { ArgIdx::ConfigFile, ArgType::Path, 'c', "config", "Specify the configuration file."},
         { ArgIdx::Input, ArgType::Path, 'i', "input", "Specify the input file."},
         { ArgIdx::Output, ArgType::Path, 'o', "output", "Specify the output file."},
-        { ArgIdx::Verbose, ArgType::NoValue, 'v', "verbose", "Run in verbose mode."}
+        { ArgIdx::Verbose, ArgType::Integer, 'v', "verbose", "Run in verbose mode."}
     }};
 
     [[nodiscard]] int start(std::span<const std::string_view> args) noexcept {
         auto invocation = parseArgs(args, ProgramArgs);
         for (const auto& arg : invocation) {
-            if (auto option = std::ranges::find_if(ProgramArgs,
+            if (arg.argType == ArgType::FreeArg)
+                std::cout << "\tFree arg: '" << arg.value << "'\n";
+            else if (auto option = std::ranges::find_if(ProgramArgs,
                    [&arg](auto opt) { return opt.argIdx == arg.argIdx; }); option != ProgramArgs.end()) {
                 std::cout << '\t' << option->longArg << " '" << arg.value << "'\n";
             }
         }
 
-        for (const auto& arg : invocation.freeArgs) {
-            std::cout << '\t' << arg << '\n';
-        }
-
-        auto verbose = occurrenceCount(ArgIdx::Verbose, invocation);
-        std::cout << verbose << '\n';
+        if (auto verbose = findArgument(invocation, ArgIdx::Verbose); verbose.has_value())
+            std::cout << numericValue<int>(verbose->value).value << '\n';
         return 0;
     }
 }
