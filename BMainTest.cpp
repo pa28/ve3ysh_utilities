@@ -7,6 +7,7 @@
 #include <algorithm>
 
 enum class ArgIdx : size_t {
+    FreeArg,
     Help,
     ConfigFile,
     Input,

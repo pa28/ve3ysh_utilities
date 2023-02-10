@@ -44,6 +44,7 @@ namespace better_main {
     enum class ArgType {
         NoValue,        ///< The option takes no value argument, it is either seen or not.
         Help,           ///< The help option takes an optional argument which is an option for which help is sought.
+        FreeArg,        ///< The argument was free (not associated with any option).
         String,         ///< The option takes a string argument.
         Integer,        ///< The option takes an integer argument.
         Float,          ///< The option takes a floating point argument.
@@ -91,12 +92,14 @@ namespace better_main {
     /**
      * @struct BMainArgValue
      * @brief The structure that holds the option observations from the program invocation.
-     * @details If the option takes an argument the string is copied into value.
+     * @details If the option takes an argument the string is copied into value. The value of argType is taken
+     * from the user supplied option list, or may be FreeArg.
      * @tparam Enum A user supplied enumeration that identifies options.
      */
     template<class Enum>
     struct BMainArgValue {
         Enum argIdx{};              ///< Identifier of the option
+        ArgType argType{};          ///< The type of argument.
         std::string value{};        ///< The argument of the option
     };
 
@@ -194,13 +197,15 @@ namespace better_main {
                     if (valuedOption != argSpec.end()) {
                         if (argList.size() > idx + 1) {
                             ++idx;
-                            invocation.emplace_back(valuedOption->argIdx, std::string(argList[idx]));
-                        } else
+                            invocation.push_back(BMainArgValue<Enum>{valuedOption->argIdx, valuedOption->argType,
+                                                                     std::string{argList[idx]}});
+                        } else {
                             throw ArgParseError(ysh::StringComposite("Command line option '", valuedOption->longArg,
                                                                      "' takes a value but none is provided."));
+                        }
                     }
                 } else {
-                    invocation.freeArgs.emplace_back(std::string(argList[idx]));
+                    invocation.push_back(BMainArgValue<Enum>{Enum{}, ArgType::FreeArg, std::string(argList[idx])});
                 }
             }
         }
