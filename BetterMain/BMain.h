@@ -67,6 +67,27 @@ namespace better_main {
         std::string_view longHelp{};    ///< A longer help string.
     };
 
+    template<class Range, class Enum>
+    requires std::is_enum_v<Enum>
+    auto findOption(const Range args, Enum arg) {
+        return std::ranges::find_if(args, [&arg](auto opt) {
+            return opt.argIdx == arg;
+        });
+    }
+
+    template<class Range>
+    auto findOption(const Range args, char arg) {
+        return std::ranges::find_if(args, [&arg](auto opt) {
+            return opt.shortArg == arg;
+        });
+    }
+
+    template<class Range, class String>
+    requires std::is_same_v<String,std::string> || std::is_same_v<String,std::string_view>
+    auto findOption(const Range args, const String& arg) {
+        return std::ranges::find_if(args, [&arg](auto opt) { return opt.longArg == arg; });
+    }
+
     /**
      * @struct BMainArgValue
      * @brief The structure that holds the option observations from the program invocation.
@@ -92,6 +113,14 @@ namespace better_main {
         std::filesystem::path programPath{};    ///< Executable path.
         std::vector<std::string> freeArgs{};    ///< Free and positional arguments.
     };
+
+    template<class Range, class Enum>
+    requires std::ranges::range<Range>
+    std::optional<BMainArgValue<Enum>> findArgument(const Range args, Enum arg) {
+        if (auto r = std::ranges::find_if(args, [&arg](auto opt) { return opt.argIdx == arg; }); r != args.end())
+            return *r;
+        return std::nullopt;
+    }
 
     /**
      * @brief Exception thrown on an unrecoverable command line option parsing error.
@@ -129,10 +158,7 @@ namespace better_main {
                         if (argString.size() == 2) {
                             doubleDash = true;
                         } else {
-                            ArgListIterator argItem = std::find_if(argSpec.begin(), argSpec.end(),
-                                                                   [&argSpec, argString](auto &arg) -> bool {
-                                                                       return arg.longArg == argString.substr(2);
-                                                                   });
+                            ArgListIterator argItem = findOption(argSpec, argString.substr(2));
                             if (argItem != argSpec.end()) {
                                 if (argItem->argType != ArgType::NoValue)
                                     valuedOption = argItem;
@@ -145,10 +171,7 @@ namespace better_main {
                     } else {
                         bool valueUsed{false};
                         for (auto argChar: argString.substr(1)) {
-                            ArgListIterator argItem = std::find_if(argSpec.begin(), argSpec.end(),
-                                                                   [&argSpec, argChar](auto &arg) -> bool {
-                                                                       return arg.shortArg == argChar;
-                                                                   });
+                            ArgListIterator argItem = findOption(argSpec, argChar);
                             if (argItem != argSpec.end()) {
                                 if (argItem->argType != ArgType::NoValue) {
                                     if (!valueUsed) {
