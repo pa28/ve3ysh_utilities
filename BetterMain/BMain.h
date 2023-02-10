@@ -169,7 +169,7 @@ namespace better_main {
                                 if (argItem->argType != ArgType::NoValue)
                                     valuedOption = argItem;
                                 else
-                                    invocation.emplace_back(argItem->argIdx);
+                                    invocation.emplace_back(argItem->argIdx, argItem->argType, "");
                             } else {
                                 throw ArgParseError("Command line option not found.");
                             }
@@ -188,7 +188,7 @@ namespace better_main {
                                                                                  "' more than one option takes an argument."));
                                     }
                                 } else {
-                                    invocation.emplace_back(argItem->argIdx);
+                                    invocation.emplace_back(argItem->argIdx, argItem->argType, "");
                                 }
                             } else {
                                 throw ArgParseError(
