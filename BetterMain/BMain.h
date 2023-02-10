@@ -59,6 +59,7 @@ namespace better_main {
      * @tparam Enum A user supplied enumeration that identifies options.
      */
     template<class Enum>
+    requires std::is_enum_v<Enum>
     struct BMainArg {
         Enum argIdx{};                  ///< Identifier of the option
         ArgType argType{};              ///< The type of argument the option takes
@@ -69,7 +70,7 @@ namespace better_main {
     };
 
     template<class Range, class Enum>
-    requires std::is_enum_v<Enum>
+    requires std::ranges::range<Range> && std::is_enum_v<Enum>
     auto findOption(const Range args, Enum arg) {
         return std::ranges::find_if(args, [&arg](auto opt) {
             return opt.argIdx == arg;
@@ -77,6 +78,7 @@ namespace better_main {
     }
 
     template<class Range>
+    requires std::ranges::range<Range>
     auto findOption(const Range args, char arg) {
         return std::ranges::find_if(args, [&arg](auto opt) {
             return opt.shortArg == arg;
@@ -84,7 +86,7 @@ namespace better_main {
     }
 
     template<class Range, class String>
-    requires std::is_same_v<String,std::string> || std::is_same_v<String,std::string_view>
+    requires std::ranges::range<Range> && (std::is_same_v<String,std::string> || std::is_same_v<String,std::string_view>)
     auto findOption(const Range args, const String& arg) {
         return std::ranges::find_if(args, [&arg](auto opt) { return opt.longArg == arg; });
     }
@@ -97,6 +99,7 @@ namespace better_main {
      * @tparam Enum A user supplied enumeration that identifies options.
      */
     template<class Enum>
+    requires std::is_enum_v<Enum>
     struct BMainArgValue {
         Enum argIdx{};              ///< Identifier of the option
         ArgType argType{};          ///< The type of argument.
@@ -118,7 +121,7 @@ namespace better_main {
     };
 
     template<class Range, class Enum>
-    requires std::ranges::range<Range>
+    requires std::ranges::range<Range> && std::is_enum_v<Enum>
     std::optional<BMainArgValue<Enum>> findArgument(const Range args, Enum arg) {
         if (auto r = std::ranges::find_if(args, [&arg](auto opt) { return opt.argIdx == arg; }); r != args.end())
             return *r;
