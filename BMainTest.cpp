@@ -18,11 +18,12 @@ enum class ArgIdx : size_t {
 
 namespace better_main {
     static constexpr std::array<better_main::BMainArg<ArgIdx>,static_cast<size_t>(ArgIdx::ArgCount)> ProgramArgs = {{
-        { ArgIdx::Help, ArgType::Help, 'h', "help", "Display program or argument help"},
-        { ArgIdx::ConfigFile, ArgType::Path, 'c', "config", "Specify the configuration file."},
-        { ArgIdx::Input, ArgType::Path, 'i', "input", "Specify the input file."},
-        { ArgIdx::Output, ArgType::Path, 'o', "output", "Specify the output file."},
-        { ArgIdx::Verbose, ArgType::Integer, 'v', "verbose", "Run in verbose mode."}
+        { ArgIdx::FreeArg, ArgType::FreeArg, '\0', "", "", ""},
+        { ArgIdx::Help, ArgType::Help, 'h', "help", "Display program or argument help", ""},
+        { ArgIdx::ConfigFile, ArgType::Path, 'c', "config", "Specify the configuration file.", ""},
+        { ArgIdx::Input, ArgType::Path, 'i', "input", "Specify the input file.", ""},
+        { ArgIdx::Output, ArgType::Path, 'o', "output", "Specify the output file.", ""},
+        { ArgIdx::Verbose, ArgType::Integer, 'v', "verbose", "Run in verbose mode.", ""}
     }};
 
     [[nodiscard]] int start(std::span<const std::string_view> args) noexcept {
@@ -37,7 +38,7 @@ namespace better_main {
         }
 
         if (auto verbose = findArgument(invocation, ArgIdx::Verbose); verbose.has_value())
-            std::cout << numericValue<int>(verbose->value).value << '\n';
+            std::cout << "\tVerbose level: " << numericValue<int>(verbose->value).value << '\n';
         return 0;
     }
 }
