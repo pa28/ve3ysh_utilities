@@ -32,8 +32,12 @@ namespace better_main {
                 std::cout << '\t' << option->longArg << " '" << arg.value << "'\n";
             }
         }
-        auto verbose = std::ranges::count_if(invocation,
-                   [](auto opt) { return opt.argIdx == ArgIdx::Verbose; } );
+
+        for (const auto& arg : invocation.freeArgs) {
+            std::cout << '\t' << arg << '\n';
+        }
+
+        auto verbose = occurrenceCount(ArgIdx::Verbose, invocation);
         std::cout << verbose << '\n';
         return 0;
     }

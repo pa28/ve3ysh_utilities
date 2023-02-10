@@ -21,7 +21,9 @@
 #include <filesystem>
 #include <iostream>
 #include <exception>
+#include <ranges>
 #include <StringComposite.h>
+#include <algorithm>
 
 namespace better_main {
 
@@ -180,6 +182,18 @@ namespace better_main {
             }
         }
         return invocation;
+    }
+
+    /**
+     * @brief Count the number of occurrences of an option in the invocation.
+     * @tparam Enum A user supplied enumeration that identifies options.
+     * @param arg The option to count.
+     * @param invocation The option observations from argument parsing.
+     * @return The count.
+     */
+    template<class Enum>
+    [[maybe_unused]] auto occurrenceCount(Enum arg, const Invocation<Enum>& invocation) {
+        return std::ranges::count_if(invocation, [&arg](auto opt) { return opt.argIdx == arg; } );
     }
 
 } // better_main
