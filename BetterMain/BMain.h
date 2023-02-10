@@ -69,6 +69,14 @@ namespace better_main {
         std::string_view longHelp{};    ///< A longer help string.
     };
 
+    /**
+     * @brief Search a range of BMainArg<Enum> objects for the first one that is of type 'arg'.
+     * @tparam Range The type of the range.
+     * @tparam Enum The type of 'arg'
+     * @param args The range.
+     * @param arg The arg
+     * @return A reference to the BMainArg<Enum> object found.
+     */
     template<class Range, class Enum>
     requires std::ranges::range<Range> && std::is_enum_v<Enum>
     auto findOption(const Range args, Enum arg) {
@@ -77,6 +85,13 @@ namespace better_main {
         });
     }
 
+    /**
+     * @brief Search a range of BMainArg<> objects for the first one that has the specified shortArg 'arg'.
+     * @tparam Range The type of the range.
+     * @param args The range.
+     * @param arg The arg
+     * @return A reference to the BMainArg<> object found.
+     */
     template<class Range>
     requires std::ranges::range<Range>
     auto findOption(const Range args, char arg) {
@@ -85,6 +100,13 @@ namespace better_main {
         });
     }
 
+    /**
+     * @brief Search a range of BMainArg<> objects for the first one that has the specified longArg 'arg'.
+     * @tparam Range The type of the range.
+     * @param args The range.
+     * @param arg The arg
+     * @return A reference to the BMainArg<> object found.
+     */
     template<class Range, class String>
     requires std::ranges::range<Range> && (std::is_same_v<String,std::string> || std::is_same_v<String,std::string_view>)
     auto findOption(const Range args, const String& arg) {
@@ -150,20 +172,24 @@ namespace better_main {
         using ArgListIterator = std::array<BMainArg<Enum>,Size>::const_iterator;
         bool doubleDash{false};
 
+        // Create the return Invocation object, set the program path and set the sub-span to the remainder.
         Invocation<Enum> invocation{};
         invocation.programPath = args.front();
         auto argList = args.subspan<1>();
+
+        // Loop over the remainder of the command line arguments.
         for (size_t idx = 0; idx < argList.size(); ++idx) {
+            // Once a double dash is encountered, all remaining items are free arguments.
             if (doubleDash) {
-                invocation.freeArgs.emplace_back(std::string(argList[idx]));
+                invocation.push_back(BMainArgValue<Enum>{Enum::FreeArg, ArgType::FreeArg, std::string{argList[idx]}});
             } else {
                 ArgListIterator valuedOption = argSpec.end();
                 auto argString = argList[idx];
                 if (!argString.empty() && argString[0] == '-') {
                     if (argString.size() > 1 && argString[1] == '-') {
-                        if (argString.size() == 2) {
+                        if (argString.size() == 2) {    // Double Dash
                             doubleDash = true;
-                        } else {
+                        } else { // Long option
                             ArgListIterator argItem = findOption(argSpec, argString.substr(2));
                             if (argItem != argSpec.end()) {
                                 if (argItem->argType != ArgType::NoValue)
@@ -174,20 +200,20 @@ namespace better_main {
                                 throw ArgParseError("Command line option not found.");
                             }
                         }
-                    } else {
-                        bool valueUsed{false};
-                        for (auto argChar: argString.substr(1)) {
+                    } else { //Short option
+                        bool valueUsed{false};  // Watch for short options that take an argument.
+                        for (auto argChar: argString.substr(1)) {  // The user can group short options
                             ArgListIterator argItem = findOption(argSpec, argChar);
                             if (argItem != argSpec.end()) {
-                                if (argItem->argType != ArgType::NoValue) {
-                                    if (!valueUsed) {
+                                if (argItem->argType != ArgType::NoValue) { // This option takes an argument
+                                    if (!valueUsed) { // but only one in the group can, first come ...
                                         valuedOption = argItem;
                                         valueUsed = true;
-                                    } else {
+                                    } else { // otherwise it is an error
                                         throw ArgParseError(ysh::StringComposite("In option '", argString,
                                                                                  "' more than one option takes an argument."));
                                     }
-                                } else {
+                                } else { // When the option does not take an argument it is just note on the list.
                                     invocation.emplace_back(argItem->argIdx, argItem->argType, "");
                                 }
                             } else {
@@ -197,9 +223,9 @@ namespace better_main {
                         }
                     }
 
-                    if (valuedOption != argSpec.end()) {
-                        if (argList.size() > idx + 1) {
-                            ++idx;
+                    if (valuedOption != argSpec.end()) { // A deferred option that takes a value.
+                        if (argList.size() > idx + 1) { // Is the a value available?
+                            ++idx; // Yes, point to it and note on the list.
                             invocation.push_back(BMainArgValue<Enum>{valuedOption->argIdx, valuedOption->argType,
                                                                      std::string{argList[idx]}});
                         } else {
@@ -207,7 +233,7 @@ namespace better_main {
                                                                      "' takes a value but none is provided."));
                         }
                     }
-                } else {
+                } else { // An embedded free argument.
                     invocation.push_back(BMainArgValue<Enum>{Enum{}, ArgType::FreeArg, std::string(argList[idx])});
                 }
             }
@@ -227,6 +253,10 @@ namespace better_main {
         return std::ranges::count_if(invocation, [&arg](auto opt) { return opt.argIdx == arg; } );
     }
 
+    /**
+     * @brief Concept to deduce string to number conversion targets.
+     * @tparam Type The type converted to.
+     */
     template<class Type>
             concept ConvertTarget = requires {
                 std::is_integral_v<Type> || std::is_floating_point_v<Type>;
