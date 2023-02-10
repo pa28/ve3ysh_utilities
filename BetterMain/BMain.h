@@ -218,12 +218,12 @@ namespace better_main {
     /**
      * @brief Count the number of occurrences of an option in the invocation.
      * @tparam Enum A user supplied enumeration that identifies options.
-     * @param arg The option to count.
      * @param invocation The option observations from argument parsing.
+     * @param arg The option to count.
      * @return The count.
      */
     template<class Enum>
-    [[maybe_unused]] auto occurrenceCount(Enum arg, const Invocation<Enum>& invocation) {
+    [[maybe_unused]] auto occurrenceCount(const Invocation<Enum>& invocation, Enum arg) {
         return std::ranges::count_if(invocation, [&arg](auto opt) { return opt.argIdx == arg; } );
     }
 
