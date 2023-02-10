@@ -10,11 +10,11 @@ _BetterMain_completions()
         prev_arg="${COMP_WORDS[COMP_CWORD-1]}"
         curr_arg="${COMP_WORDS[COMP_CWORD]}"
 
-	if [[ " ${file_arg[*]} " =~ " ${prev_arg} " ]]; then
-	    COMPREPLY=($(compgen -f -- "${curr_arg}"))
-        else
-           COMPREPLY=($(compgen -W "${file_arg[*]} ${args[*]}" -- "${curr_arg}"))
-	fi
+      if [[ " ${file_arg[*]} " =~ " ${prev_arg} " ]]; then
+          COMPREPLY=($(compgen -f -- "${curr_arg}"))
+      else
+          COMPREPLY=($(compgen -W "${file_arg[*]} ${args[*]}" -- "${curr_arg}"))
+      fi
     fi
 }
 
