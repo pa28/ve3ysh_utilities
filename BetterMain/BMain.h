@@ -59,6 +59,7 @@ namespace better_main {
     template<class Enum,std::size_t Size>
     Invocation<Enum> parseArgs(std::span<const std::string_view>& args, const std::array<BMainArg<Enum>,Size>& argSpec){
         using ArgListIterator = std::array<BMainArg<Enum>,Size>::const_iterator;
+        bool doubleDash{false};
 
         Invocation<Enum> invocation{};
         invocation.programPath = args.front();
