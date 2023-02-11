@@ -12,6 +12,8 @@ enum class ArgIdx : size_t {
     Help,
     Output,
     ExecName,
+    User,
+    Group,
     ArgCount
 };
 
@@ -20,7 +22,9 @@ namespace better_main {
         { ArgIdx::FreeArg, ArgType::FreeArg, '\0', "", "", ""},
         { ArgIdx::Help, ArgType::Help, 'h', "help", "Display program or argument help", ""},
         { ArgIdx::ExecName, ArgType::String, 'e', "execName", "Specify the executable to generate for.", ""},
-        { ArgIdx::Output, ArgType::Path, 'o', "output", "Specify the output file.", ""}
+        { ArgIdx::Output, ArgType::Path, 'o', "output", "Specify the output file.", ""},
+        { ArgIdx::User, ArgType::User, 'u', "user" "", "" },
+        { ArgIdx::Group, ArgType::Group, 'g', "group", "", ""}
     }};
 
     [[nodiscard]] int start(std::span<const std::string_view> args) noexcept {

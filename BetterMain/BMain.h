@@ -49,6 +49,9 @@ namespace better_main {
         Integer,        ///< The option takes an integer argument.
         Float,          ///< The option takes a floating point argument.
         Path,           ///< The option takes a filesystem path argument.
+        Host,           ///< The option takes a host name argument.
+        User,           ///< The option takes a user name argument.
+        Group,          ///< The option takes a group name argument.
     };
 
     /**
@@ -165,10 +168,17 @@ namespace better_main {
      * @param programName The name of the program to auto complete.
      * @param argSpec The options container.
      * @param fStrm The ostream to write the completion file to.
+     * https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion-Builtins.html
      */
     template<class Enum, size_t Size>
     void generateCompletionFile(const std::string& programName, const std::array<BMainArg<Enum>,Size>& argSpec, std::ostream& fStrm) {
-        std::stringstream fileArgStrm{}, argStrm{};
+        auto writeOptions = [](std::stringstream& strm, char shortArg, const std::string_view& longArg) {
+            if (strm.tellp() != 0)
+                strm << ' ';
+            strm << '-' << shortArg << " --" << longArg;
+        };
+
+        std::stringstream fileArgStrm{}, argStrm{}, hostArgStrm{}, usrArgStrm{}, grpArgStrm{};
         for (const auto& arg : argSpec) {
             switch (arg.argType) {
                 case ArgType::NoValue:
@@ -176,14 +186,19 @@ namespace better_main {
                 case ArgType::String:
                 case ArgType::Integer:
                 case ArgType::Float:
-                    if (argStrm.tellp() != 0)
-                        argStrm << ' ';
-                    argStrm << '-' << arg.shortArg << " --" << arg.longArg;
+                    writeOptions(argStrm, arg.shortArg, arg.longArg);
                     break;
                 case ArgType::Path:
-                    if (fileArgStrm.tellp() != 0)
-                        fileArgStrm << ' ';
-                    fileArgStrm << '-' << arg.shortArg << " --" << arg.longArg;
+                    writeOptions(fileArgStrm, arg.shortArg, arg.longArg);
+                    break;
+                case ArgType::Host:
+                    writeOptions(hostArgStrm, arg.shortArg, arg.longArg);
+                    break;
+                case ArgType::User:
+                    writeOptions(usrArgStrm, arg.shortArg, arg.longArg);
+                    break;
+                case ArgType::Group:
+                    writeOptions(grpArgStrm, arg.shortArg, arg.longArg);
                     break;
                 case ArgType::FreeArg:
                 default:
@@ -195,14 +210,55 @@ namespace better_main {
 R"(#/usr/bin/env bash
 _)" << programName << R"(_completions()
 {
-    local file_args=(")" << fileArgStrm.str() << R"(");
-    local args=(")" << argStrm.str() << R"(");
-    local curr_arg;
+)";
+        if (argStrm.tellp() != 0)
+            fStrm << R"(    local args=(")" << argStrm.str() << "\")\n";
+        if (fileArgStrm.tellp() != 0)
+            fStrm << R"(    local file_args=(")" << fileArgStrm.str() << "\")\n";
+        if (usrArgStrm.tellp() != 0)
+            fStrm << R"(    local user_args=(")" << usrArgStrm.str() << "\")\n";
+        if (grpArgStrm.tellp() != 0)
+            fStrm << R"(    local group_args=(")" << grpArgStrm.str() << "\")\n";
+        fStrm << R"(    local curr_arg;
     if [[ ${#COMP_WORDS[@]} -ge 1 ]]; then
-        curr_arg="${COMP_WORDS[COMP_CWORD]}"
+        local curr_arg="${COMP_WORDS[COMP_CWORD]}"
+
+        if [[ ${#COMP_WORDS[@]} -ge 2 ]]; then
+            local prev_arg="${COMP_WORDS[COMP_CWORD-1]}"
+)";
+        if (fileArgStrm.tellp() != 0)
+            fStrm <<
+                  R"(            if [[ " ${file_args[*]} " =~ " ${prev_arg} " ]]; then
+                COMPREPLY=($(compgen -f -- "${curr_arg}"))
+                return 0
+            fi
+)";
+        if (usrArgStrm.tellp() != 0)
+            fStrm <<
+R"(            if [[ " ${user_args[*]} " =~ " ${prev_arg} " ]]; then
+                COMPREPLY=($(compgen -u -- "${curr_arg}"))
+                return 0
+            fi
+)";
+        if (grpArgStrm.tellp() != 0)
+            fStrm <<
+                  R"(            if [[ " ${group_args[*]} " =~ " ${prev_arg} " ]]; then
+                COMPREPLY=($(compgen -g -- "${curr_arg}"))
+                return 0
+            fi
+)";
+        fStrm <<
+R"(        fi
 
         if [[ ${curr_arg:0:1} == "-" ]]; then
-            COMPREPLY=($(compgen -W "${file_args[*]} ${args[*]}" -- "${curr_arg}"))
+            COMPREPLY=($(compgen -W ")";
+        if (argStrm.tellp() != 0)
+            fStrm << "${args[*]} ";
+        if (fileArgStrm.tellp() != 0)
+            fStrm << "${file_args[*]} ";
+        if (usrArgStrm.tellp() != 0)
+            fStrm << "${user_args[*]} ";
+        fStrm << R"(" -- "${curr_arg}"))
             return 0
         fi
 
