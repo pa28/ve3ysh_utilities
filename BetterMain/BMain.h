@@ -159,6 +159,66 @@ namespace better_main {
     };
 
     /**
+     * @brief Generate a bash command line completion file.
+     * @tparam Enum A user supplied enumeration that identifies options.
+     * @tparam Size The number of options.
+     * @param programName The name of the program to auto complete.
+     * @param argSpec The options container.
+     * @param fStrm The ostream to write the completion file to.
+     */
+    template<class Enum, size_t Size>
+    void generateCompletionFile(const std::string& programName, const std::array<BMainArg<Enum>,Size>& argSpec, std::ostream& fStrm) {
+        std::stringstream fileArgStrm{}, argStrm{};
+        for (const auto& arg : argSpec) {
+            switch (arg.argType) {
+                case ArgType::NoValue:
+                case ArgType::Help:
+                case ArgType::String:
+                case ArgType::Integer:
+                case ArgType::Float:
+                    if (argStrm.tellp() != 0)
+                        argStrm << ' ';
+                    argStrm << '-' << arg.shortArg << " --" << arg.longArg;
+                    break;
+                case ArgType::Path:
+                    if (fileArgStrm.tellp() != 0)
+                        fileArgStrm << ' ';
+                    fileArgStrm << '-' << arg.shortArg << " --" << arg.longArg;
+                    break;
+                case ArgType::FreeArg:
+                default:
+                    break;
+            }
+        }
+
+        fStrm <<
+R"(#/usr/bin/env bash
+_)" << programName << R"(_completions()
+{
+    local file_args=(")" << fileArgStrm.str() << R"(");
+    local args=(")" << argStrm.str() << R"(");
+    local curr_arg;
+    if [[ ${#COMP_WORDS[@]} -ge 1 ]]; then
+        curr_arg="${COMP_WORDS[COMP_CWORD]}"
+
+        if [[ ${curr_arg:0:1} == "-" ]]; then
+            COMPREPLY=($(compgen -W "${file_args[*]} ${args[*]}" -- "${curr_arg}"))
+            return 0
+        fi
+
+        if [[ -z "${curr_arg}" ]]; then
+            COMPREPLY=($(compgen -f))
+            return 0
+        fi
+
+        COMPREPLY=($(compgen -f -- "${curr_arg}"))
+    fi
+    return 0
+}
+complete -o filenames -F _)" << programName << R"(_completions )" << programName << '\n';
+    }
+
+    /**
      * @brief Parse command line arguments into an Invocation structure.
      * @tparam Enum A user supplied enumeration that identifies options.
      * @tparam Size The size of the option array, deduced.
@@ -167,7 +227,7 @@ namespace better_main {
      * @return An Invocation<Enum> structure with invocation observations.
      * @throws ArgParseError.
      */
-    template<class Enum,std::size_t Size>
+    template<class Enum, size_t Size>
     Invocation<Enum> parseArgs(std::span<const std::string_view>& args, const std::array<BMainArg<Enum>,Size>& argSpec){
         using ArgListIterator = std::array<BMainArg<Enum>,Size>::const_iterator;
         bool doubleDash{false};
