@@ -172,104 +172,127 @@ namespace better_main {
      */
     template<class Enum, size_t Size>
     void generateCompletionFile(const std::string& programName, const std::array<BMainArg<Enum>,Size>& argSpec, std::ostream& fStrm) {
-        auto writeOptions = [](std::stringstream& strm, char shortArg, const std::string_view& longArg) {
-            if (strm.tellp() != 0)
-                strm << ' ';
-            strm << '-' << shortArg << " --" << longArg;
+        /**
+         * @struct ArgDataType
+         * @brief Data used to generate command line option variant portions of the completion file.
+         */
+        struct ArgDataType {
+            ArgType argType{};
+            std::string_view argName{};
+            char option{};
+            std::stringstream strm{};
         };
 
-        std::stringstream fileArgStrm{}, argStrm{}, hostArgStrm{}, usrArgStrm{}, grpArgStrm{};
+        /**
+         * @brief Write command line options to a stream.
+         */
+        auto writeOptions = [](ArgDataType& argDataType, char shortArg, const std::string_view& longArg) {
+            if (argDataType.strm.tellp() != 0)
+                argDataType.strm << ' ';
+            argDataType.strm << '-' << shortArg << " --" << longArg;
+        };
+
+        /**
+         * @brief Write the definition of the argument lists to the completion file.
+         */
+        auto defineCompArgs = [](std::ostream& oStrm, ArgDataType& argDataType) {
+            if (argDataType.strm.tellp() != 0)
+                oStrm << "  local " << argDataType.argName << "=(\"" << argDataType.strm.str() << "\")\n";
+        };
+
+        /**
+         * @brief Write the code that actions a type of command line option.
+         */
+        auto actionCompArgs = [](std::ostream& oStrm, ArgDataType& argDataType) {
+            if (argDataType.strm.tellp() != 0)
+                oStrm << "      if [[ \" ${" << argDataType.argName << R"([*]} " =~ " ${prev_arg} " ]]; then)" << '\n'
+                      << "        COMPREPLY=($(compgen -" << argDataType.option << " -- \"${curr_arg}\"))\n"
+                      << "        return 0\n"
+                      << "      fi\n";
+        };
+
+        /**
+         * @brief Write the command line options into the word list.
+         */
+        auto includeCompArgs = [](std::ostream& oStrm, ArgDataType& argDataType) {
+            if (argDataType.strm.tellp() != 0)
+                oStrm << "${" << argDataType.argName << "[*]} ";
+        };
+
+        /**
+         * Build up the list of types of command line options with interesting argument completion actions.
+         */
+        std::vector<ArgDataType> argDataTypeList{};
+        argDataTypeList.emplace_back(ArgType::Path, "path_args", 'f');
+        argDataTypeList.emplace_back(ArgType::Host, "host_args", 'h');
+        argDataTypeList.emplace_back(ArgType::User, "user_args", 'u');
+        argDataTypeList.emplace_back(ArgType::Group, "group_args", 'g');
+
+        /**
+         * Options that are not interesting for argument completion.
+         */
+        ArgDataType unclassified{ArgType::FreeArg, "args", 'W'};
+
+        /**
+         * Gather options by type.
+         */
         for (const auto& arg : argSpec) {
-            switch (arg.argType) {
-                case ArgType::NoValue:
-                case ArgType::Help:
-                case ArgType::String:
-                case ArgType::Integer:
-                case ArgType::Float:
-                    writeOptions(argStrm, arg.shortArg, arg.longArg);
-                    break;
-                case ArgType::Path:
-                    writeOptions(fileArgStrm, arg.shortArg, arg.longArg);
-                    break;
-                case ArgType::Host:
-                    writeOptions(hostArgStrm, arg.shortArg, arg.longArg);
-                    break;
-                case ArgType::User:
-                    writeOptions(usrArgStrm, arg.shortArg, arg.longArg);
-                    break;
-                case ArgType::Group:
-                    writeOptions(grpArgStrm, arg.shortArg, arg.longArg);
-                    break;
-                case ArgType::FreeArg:
-                default:
-                    break;
+            if (auto argItem = std::find_if(argDataTypeList.begin(), argDataTypeList.end(), [&arg](const ArgDataType& list){
+                return arg.argType == list.argType;
+            }); argItem != argDataTypeList.end()) {
+                writeOptions(*argItem, arg.shortArg, arg.longArg);
+            } else if (arg.argType != ArgType::FreeArg){
+                writeOptions(unclassified, arg.shortArg, arg.longArg);
             }
         }
 
+        /**
+         * Generate the completion file.
+         */
         fStrm <<
 R"(#/usr/bin/env bash
 _)" << programName << R"(_completions()
 {
 )";
-        if (argStrm.tellp() != 0)
-            fStrm << R"(    local args=(")" << argStrm.str() << "\")\n";
-        if (fileArgStrm.tellp() != 0)
-            fStrm << R"(    local file_args=(")" << fileArgStrm.str() << "\")\n";
-        if (usrArgStrm.tellp() != 0)
-            fStrm << R"(    local user_args=(")" << usrArgStrm.str() << "\")\n";
-        if (grpArgStrm.tellp() != 0)
-            fStrm << R"(    local group_args=(")" << grpArgStrm.str() << "\")\n";
-        fStrm << R"(    local curr_arg;
-    if [[ ${#COMP_WORDS[@]} -ge 1 ]]; then
-        local curr_arg="${COMP_WORDS[COMP_CWORD]}"
 
-        if [[ ${#COMP_WORDS[@]} -ge 2 ]]; then
-            local prev_arg="${COMP_WORDS[COMP_CWORD-1]}"
+        defineCompArgs(fStrm, unclassified);
+        for (auto& arg : argDataTypeList)
+            defineCompArgs(fStrm, arg);
+
+        fStrm << R"(
+  local curr_arg;
+  if [[ ${#COMP_WORDS[@]} -ge 1 ]]; then
+    local curr_arg="${COMP_WORDS[COMP_CWORD]}"
+
+    if [[ ${#COMP_WORDS[@]} -ge 2 ]]; then
+      local prev_arg="${COMP_WORDS[COMP_CWORD-1]}"
+
 )";
-        if (fileArgStrm.tellp() != 0)
-            fStrm <<
-                  R"(            if [[ " ${file_args[*]} " =~ " ${prev_arg} " ]]; then
-                COMPREPLY=($(compgen -f -- "${curr_arg}"))
-                return 0
-            fi
-)";
-        if (usrArgStrm.tellp() != 0)
-            fStrm <<
-R"(            if [[ " ${user_args[*]} " =~ " ${prev_arg} " ]]; then
-                COMPREPLY=($(compgen -u -- "${curr_arg}"))
-                return 0
-            fi
-)";
-        if (grpArgStrm.tellp() != 0)
-            fStrm <<
-                  R"(            if [[ " ${group_args[*]} " =~ " ${prev_arg} " ]]; then
-                COMPREPLY=($(compgen -g -- "${curr_arg}"))
-                return 0
-            fi
-)";
+
+        for (auto& arg : argDataTypeList)
+            actionCompArgs(fStrm, arg);
+
         fStrm <<
-R"(        fi
+R"(    fi
 
-        if [[ ${curr_arg:0:1} == "-" ]]; then
-            COMPREPLY=($(compgen -W ")";
-        if (argStrm.tellp() != 0)
-            fStrm << "${args[*]} ";
-        if (fileArgStrm.tellp() != 0)
-            fStrm << "${file_args[*]} ";
-        if (usrArgStrm.tellp() != 0)
-            fStrm << "${user_args[*]} ";
+    if [[ ${curr_arg:0:1} == "-" ]]; then
+      COMPREPLY=($(compgen -W ")";
+        includeCompArgs(fStrm, unclassified);
+        for (auto& arg : argDataTypeList)
+            includeCompArgs(fStrm, arg);
+
         fStrm << R"(" -- "${curr_arg}"))
-            return 0
-        fi
-
-        if [[ -z "${curr_arg}" ]]; then
-            COMPREPLY=($(compgen -f))
-            return 0
-        fi
-
-        COMPREPLY=($(compgen -f -- "${curr_arg}"))
+      return 0
     fi
-    return 0
+
+    if [[ -z "${curr_arg}" ]]; then
+      COMPREPLY=($(compgen -f))
+      return 0
+    fi
+
+    COMPREPLY=($(compgen -f -- "${curr_arg}"))
+  fi
+  return 0
 }
 complete -o filenames -F _)" << programName << R"(_completions )" << programName << '\n';
     }
