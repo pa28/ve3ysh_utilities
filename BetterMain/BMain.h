@@ -82,7 +82,7 @@ namespace better_main {
      */
     template<class Range, class Enum>
     requires std::ranges::range<Range> && std::is_enum_v<Enum>
-    auto findOption(const Range args, Enum arg) {
+    [[maybe_unused]] auto findOption(const Range args, Enum arg) {
         return std::ranges::find_if(args, [&arg](auto opt) {
             return opt.argIdx == arg;
         });
@@ -97,7 +97,7 @@ namespace better_main {
      */
     template<class Range>
     requires std::ranges::range<Range>
-    auto findOption(const Range args, char arg) {
+    [[maybe_unused]] auto findOption(const Range args, char arg) {
         return std::ranges::find_if(args, [&arg](auto opt) {
             return opt.shortArg == arg;
         });
@@ -402,7 +402,7 @@ complete -o filenames -F _)" << programName << R"(_completions )" << programName
     template<class Type, class String>
     requires ConvertTarget<Type> &&
         (std::is_same_v<String,std::string> || std::is_same_v<String,std::wstring>)
-    NumericResult<Type> numericValue(const String& value, int base = 0) {
+    [[maybe_unused]] NumericResult<Type> numericValue(const String& value, int base = 0) {
         std::size_t pos{0};
         Type result{};
         if constexpr (std::is_same_v<Type,int>) {
