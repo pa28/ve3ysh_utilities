@@ -171,7 +171,8 @@ namespace better_main {
      * https://www.gnu.org/software/bash/manual/html_node/Programmable-Completion-Builtins.html
      */
     template<class Enum, size_t Size>
-    void generateCompletionFile(const std::string& programName, const std::array<BMainArg<Enum>,Size>& argSpec, std::ostream& fStrm) {
+    void generateCompletionFile(const std::string& programName, const std::array<BMainArg<Enum>,Size>& argSpec,
+                                std::ostream& fStrm, bool longOptDoubleDash = true) {
         /**
          * @struct ArgDataType
          * @brief Data used to generate command line option variant portions of the completion file.
@@ -186,10 +187,10 @@ namespace better_main {
         /**
          * @brief Write command line options to a stream.
          */
-        auto writeOptions = [](ArgDataType& argDataType, char shortArg, const std::string_view& longArg) {
+        auto writeOptions = [longOptDoubleDash](ArgDataType& argDataType, char shortArg, const std::string_view& longArg) {
             if (argDataType.strm.tellp() != 0)
                 argDataType.strm << ' ';
-            argDataType.strm << '-' << shortArg << " --" << longArg;
+            argDataType.strm << '-' << shortArg << (longOptDoubleDash ? " --" : " -") << longArg;
         };
 
         /**
@@ -307,7 +308,8 @@ complete -o filenames -F _)" << programName << R"(_completions )" << programName
      * @throws ArgParseError.
      */
     template<class Enum, size_t Size>
-    Invocation<Enum> parseArgs(std::span<const std::string_view>& args, const std::array<BMainArg<Enum>,Size>& argSpec){
+    Invocation<Enum> parseArgs(std::span<const std::string_view>& args, const std::array<BMainArg<Enum>,Size>& argSpec,
+                               bool longOptDoubleDash = true){
         using ArgListIterator = std::array<BMainArg<Enum>,Size>::const_iterator;
         bool doubleDash{false};
 
@@ -325,11 +327,12 @@ complete -o filenames -F _)" << programName << R"(_completions )" << programName
                 ArgListIterator valuedOption = argSpec.end();
                 auto argString = argList[idx];
                 if (!argString.empty() && argString[0] == '-') {
-                    if (argString.size() > 1 && argString[1] == '-') {
+                    if (longOptDoubleDash ? (argString.starts_with("--") && argString.size() > 2) :
+                            (argString[0] == '-' && argString.size() > 2)) {
                         if (argString.size() == 2) {    // Double Dash
                             doubleDash = true;
                         } else { // Long option
-                            ArgListIterator argItem = findOption(argSpec, argString.substr(2));
+                            ArgListIterator argItem = findOption(argSpec, argString.substr(longOptDoubleDash ? 2 : 1));
                             if (argItem != argSpec.end()) {
                                 if (argItem->argType != ArgType::NoValue)
                                     valuedOption = argItem;
@@ -340,24 +343,26 @@ complete -o filenames -F _)" << programName << R"(_completions )" << programName
                             }
                         }
                     } else { //Short option
-                        bool valueUsed{false};  // Watch for short options that take an argument.
-                        for (auto argChar: argString.substr(1)) {  // The user can group short options
-                            ArgListIterator argItem = findOption(argSpec, argChar);
-                            if (argItem != argSpec.end()) {
-                                if (argItem->argType != ArgType::NoValue) { // This option takes an argument
-                                    if (!valueUsed) { // but only one in the group can, first come ...
-                                        valuedOption = argItem;
-                                        valueUsed = true;
-                                    } else { // otherwise it is an error
-                                        throw ArgParseError(ysh::StringComposite("In option '", argString,
-                                                                                 "' more than one option takes an argument."));
+                        if (doubleDash = argString.starts_with("--"); !doubleDash) {
+                            bool valueUsed{false};  // Watch for short options that take an argument.
+                            for (auto argChar: argString.substr(1)) {  // The user can group short options
+                                ArgListIterator argItem = findOption(argSpec, argChar);
+                                if (argItem != argSpec.end()) {
+                                    if (argItem->argType != ArgType::NoValue) { // This option takes an argument
+                                        if (!valueUsed) { // but only one in the group can, first come ...
+                                            valuedOption = argItem;
+                                            valueUsed = true;
+                                        } else { // otherwise it is an error
+                                            throw ArgParseError(ysh::StringComposite("In option '", argString,
+                                                                                     "' more than one option takes an argument."));
+                                        }
+                                    } else { // When the option does not take an argument it is just note on the list.
+                                        invocation.emplace_back(argItem->argIdx, argItem->argType, "");
                                     }
-                                } else { // When the option does not take an argument it is just note on the list.
-                                    invocation.emplace_back(argItem->argIdx, argItem->argType, "");
+                                } else {
+                                    throw ArgParseError(
+                                            ysh::StringComposite("Command line option '", argChar, "' not found."));
                                 }
-                            } else {
-                                throw ArgParseError(
-                                        ysh::StringComposite("Command line option '", argChar, "' not found."));
                             }
                         }
                     }

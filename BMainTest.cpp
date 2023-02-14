@@ -28,7 +28,7 @@ namespace better_main {
     }};
 
     [[nodiscard]] int start(std::span<const std::string_view> args) noexcept {
-        auto invocation = parseArgs(args, ProgramArgs);
+        auto invocation = parseArgs(args, ProgramArgs, false);
         for (const auto& arg : invocation) {
             if (arg.argType == ArgType::FreeArg)
                 std::cout << "\tFree arg: '" << arg.value << "'\n";
@@ -41,7 +41,7 @@ namespace better_main {
         if (auto execName = findArgument(invocation, ArgIdx::ExecName); execName.has_value()) {
             if (auto output = findArgument(invocation, ArgIdx::Output); output.has_value()) {
                 std::ofstream fStr{output.value().value};
-                generateCompletionFile(execName.value().value, ProgramArgs, fStr);
+                generateCompletionFile(execName.value().value, ProgramArgs, fStr, false);
                 fStr.close();
             } else {
                 std::cerr << "Output file required.\n";
