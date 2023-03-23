@@ -70,11 +70,15 @@ public:
      * @param value The measurement value.
      */
     bool addMeasurement(const std::string& prefix, const std::optional<std::string>& name, const std::optional<std::string>& value) {
-        return addMeasurement(prefix, name, value, timeStamp);
+        if (!value)
+            return addMeasurement(prefix, name, value, timeStamp);
+        return false;
     }
 
     bool addMeasurement(const std::string& prefix, const std::string& name, const std::string& value) {
-        return addMeasurement(prefix, name, value, timeStamp);
+        if (!value.empty())
+            return addMeasurement(prefix, name, value, timeStamp);
+        return false;
     }
 
     /**
