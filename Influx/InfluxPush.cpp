@@ -58,7 +58,6 @@ void InfluxPush::setMeasurementEpoch(const std::string &date, const std::string 
     epocDateTime.tm_gmtoff = localDateTime.tm_gmtoff;
     epocDateTime.tm_zone = localDateTime.tm_zone;
     epocDateTime.tm_isdst = localDateTime.tm_isdst;
-    std::cout << static_cast<unsigned long long>(mktime(&epocDateTime)) << '\n';
     timeStamp = static_cast<unsigned long long>(mktime(&epocDateTime)) * 1000000000;
 }
 
