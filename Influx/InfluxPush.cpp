@@ -18,7 +18,7 @@ bool InfluxPush::pushData() {
              << "://" << influxHost << ':' << influxPort << "/write?db=" << influxDataBase;
     
     auto postData = measurements.str();
-    
+
     if (!postData.empty())
         try {
             cURLpp::Cleanup cleaner;
@@ -29,7 +29,6 @@ bool InfluxPush::pushData() {
             std::list<std::string> header;
             header.emplace_back("Content-Type: application/octet-stream");
             request.setOpt(new cURLpp::Options::HttpHeader(header));
-            
             request.setOpt(new cURLpp::Options::PostFieldSize(static_cast<long>(postData.length())));
             request.setOpt(new cURLpp::Options::PostFields(postData));
 
@@ -45,17 +44,22 @@ bool InfluxPush::pushData() {
 }
 
 void InfluxPush::setMeasurementEpoch(const std::string &date, const std::string &time) {
-    struct tm tm{};
-    memset(&tm, 0, sizeof(tm));
-    time_t now;
-    ::time(&now);
-    [[maybe_unused]] auto tmNow = ::localtime(&now);
+    std::tm localDateTime{};
+    time_t epoch;
+    ::time(&epoch);
+    localDateTime = *(localtime(&epoch));
+
+    struct tm epocDateTime{};
+    memset(&epocDateTime, 0, sizeof(epocDateTime));
+
     std::string timeString{date};
-    timeString.append("T").append(time);
-    strptime(timeString.c_str(), TimeFmt.c_str(), &tm);
-    tm.tm_gmtoff = tmNow->tm_gmtoff;
-    tm.tm_zone = tm.tm_zone;
-    timeStamp = static_cast<unsigned long long>(mktime(&tm)) * 1000000000;
+    timeString.append("T").append(time).append(localDateTime.tm_zone);
+    strptime(timeString.c_str(), TimeFmtISO.c_str(), &epocDateTime);
+    epocDateTime.tm_gmtoff = localDateTime.tm_gmtoff;
+    epocDateTime.tm_zone = localDateTime.tm_zone;
+    epocDateTime.tm_isdst = localDateTime.tm_isdst;
+    std::cout << static_cast<unsigned long long>(mktime(&epocDateTime)) << '\n';
+    timeStamp = static_cast<unsigned long long>(mktime(&epocDateTime)) * 1000000000;
 }
 
 void InfluxPush::showData() {
