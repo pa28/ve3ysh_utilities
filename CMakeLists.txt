@@ -8,3 +8,4 @@ include_directories(BetterMain File)
 add_compile_options(-Wall -Wextra -pedantic -Werror -Wconversion -Wno-attributes -Wno-unknown-pragmas)
 
 add_executable(BetterMain BMainTest.cpp BetterMain/BMain.cpp File/StringComposite.cpp)
+add_executable(MutexGuadrded MutexGuadrdedTest.cpp ysh/MutexGuarded.cpp BetterMain/BMain.cpp)
